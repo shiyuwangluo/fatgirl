@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+	<!--
+		
+	-->
+
+	<head>
+		<meta charset="utf-8" />
+		<title>小胖妞减肥计划</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<link rel="stylesheet" href="css/index.css" />
+		<script src="http://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+		<script type="text/javascript" src="http://www.zhangxinxu.com/study/js/jquery-audioPlay.js"></script>
+	</head>
+
+	<body>
+		<div id="fatgirl" class="fatgirl">胖妞</div>
+		<div id='test' style="float: none;"></div>
+		<div id='fattgirlwidth' style="float: none;"></div>
+		<div id='shakespeed' style="float: none;"></div>
+		<input type="button" value="摇一摇" onclick="doResult(5)" />
+		<input type="button" value="停止" onclick="clear1()" />
+		<input type="hidden" id="paly" />
+		<div id="leftmove"></div>
+		<div id="rightmove"></div>
+		
+	</body>
+	<script type="text/javascript">
+		var screenwidth = document.body.clientWidth;
+		var screenheight = document.body.clientHeight;
+		var fatgirl = document.getElementById('fatgirl');
+		fatgirl.style.width = screenwidth / 3 + 'px';
+		fatgirl.style.height = screenheight / 4 + 'px';
+		var lastleft = fatgirl.style.width;
+		var lasttop = fatgirl.style.height;
+		fatgirl.style.left = screenwidth / 3 + 'px';
+		fatgirl.style.top = screenheight / 3 + 'px';
+		/*监听浏览器窗口变化*/
+		$(window).resize(function() {
+			var screenwidth = document.body.clientWidth;
+			var screenheight = document.body.clientHeight;
+			var fatgirl = document.getElementById('fatgirl');
+			fatgirl.style.width = screenwidth / 3 + 'px';
+			fatgirl.style.height = screenheight / 4 + 'px';
+			fatgirl.style.left = screenwidth / 3 + 'px';
+			fatgirl.style.top = screenheight / 3 + 'px';
+		});
+		/*手机旋转*/
+		/*var evt = "onorientationchange" in window ? "orientationchange" : "resize";
+			window.addEventListener(evt, function() {
+		    alert("屏幕旋转");
+			}, false); */
+		/*值转换*/
+		function move(s) {
+			var ret = parseInt(s);
+			return (isNaN(ret) ? 0 : ret);
+		}
+		/*div重力感应（随手机倾斜）*/
+		function Orientation(selector) {}
+		Orientation.prototype.init = function() {
+			window.addEventListener('deviceorientation', this.orientationListener, false);
+			window.addEventListener('MozOrientation', this.orientationListener, false);
+			window.addEventListener('devicemotion', this.orientationListener, false);
+		}
+		Orientation.prototype.orientationListener = function(evt) {
+			// For FF3.6+
+			if (!evt.gamma && !evt.beta) {
+				// angle=radian*180.0/PI 在firefox中x和y是弧度值,
+				setInterval(function() {
+					evt.gamma = (evt.x * (180 / Math.PI)); //转换成角度值,
+					evt.beta = (evt.y * (180 / Math.PI)); //转换成角度值
+					evt.alpha = (evt.z * (180 / Math.PI)); //转换成角度值
+				}, 1000);
+			}
+			/* beta:  -180..180 (rotation around x axis) */
+			/* gamma:  -90..90  (rotation around y axis) */
+			/* alpha:    0..360 (rotation around z axis) (-180..180) */
+			var gamma = evt.gamma
+			var beta = evt.beta
+			var alpha = evt.alpha
+				/*if (evt.accelerationIncludingGravity) {
+					// window.removeEventListener('deviceorientation', this.orientationListener, false);
+					gamma = event.accelerationIncludingGravity.x * 10
+					beta = -event.accelerationIncludingGravity.y * 10
+					alpha = event.accelerationIncludingGravity.z * 10
+				}*/
+			gamma = move(gamma);
+			beta = move(beta);
+			var lastgamma;
+			var lastbeta;
+			if (gamma == 'undefined') {
+				gamma = lastgamma;
+			}
+			if (beta == 'undefined') {
+				beta = lastbeta;
+			}
+			var style = document.querySelector("#fatgirl").style;
+			if (beta > 0) {
+				if (move(style.top) > 0 && move(style.top) < screenheight - move(fatgirl.style.height) - 5) {
+					style.top = move(style.top) + 3 + "px";
+				}
+			} else if (beta < 0) {
+				if (move(style.top) < screenheight - move(fatgirl.style.height) && move(style.top) > 3) {
+					style.top = move(style.top) - 3 + "px";
+				}
+			}
+			if (gamma > 0) {
+				if (move(style.left) > 0 && move(style.left) < screenwidth - move(fatgirl.style.width) - 5) {
+					style.left = move(style.left) + 2 + 'px';
+				}
+			} else if (gamma < 0) {
+				if (move(style.left) < screenwidth - move(fatgirl.style.width) && move(style.left) > 3) {
+					style.left = move(style.left) - 2 + 'px';
+				}
+			}
+			document.querySelector("#test").innerHTML = style.left + ';' + style.top;
+			lastbeta = beta;
+			lastgamma = gamma;
+		};
+		(new Orientation()).init();
+		/*摇晃手机*/
+		var leftmove;
+		var rightmove;
+		var SHAKE_THRESHOLD = 850;
+		var last_update = 0;
+		var x = y = z = last_x = last_y = last_z = 0;
+		var blleft = 95;
+		if (window.DeviceMotionEvent) {
+			window.addEventListener('devicemotion', deviceMotionHandler, false);
+		} else {
+			alert('本设备不支持devicemotion事件');
+		}
+
+		function deviceMotionHandler(eventData) {
+			var acceleration = eventData.accelerationIncludingGravity;
+			var curTime = new Date().getTime();
+			if ((curTime - last_update) > 100) {
+				var diffTime = curTime - last_update;
+				last_update = curTime;
+				x = acceleration.x;
+				y = acceleration.y;
+				z = acceleration.z;
+				var speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000;
+				var status = document.getElementById("status");
+				if (speed > SHAKE_THRESHOLD) {
+					speed = move(speed / 550);
+					if (speed > 3) {
+						speed = 3;
+					}
+					doResult(speed);
+				} else {
+					speed = 0;
+					setTimeout(function() {
+						clear1();
+					}, 1500);
+				}
+				last_x = x;
+				last_y = y;
+				last_z = z;
+			}
+		}
+
+		function clear1() {
+			setTimeout(function() {
+				clearInterval(leftmove);
+				clearInterval(rightmove);
+				document.getElementById('leftmove').innerHTML = 'leftmove：' + leftmove;
+				document.getElementById('rightmove').innerHTML = 'rightmove：' + rightmove;
+			}, 2000);
+		}
+
+		function doResult(speed) {
+			document.getElementById('shakespeed').innerHTML = '速度：' + speed;
+			var style = document.querySelector("#fatgirl").style;
+			leftmove = setInterval(function() {
+				lm(speed);
+			}, 10);
+
+			function lm(speed) {
+				if (move(style.left) < screenwidth - move(fatgirl.style.width) && move(style.left) > 5) {
+					style.left = (move(style.left) - speed) + 'px';
+				} else {
+					style.width = move(style.width) - 1 + 'px';
+					$('#paly').click();
+					clearInterval(leftmove);
+					rightmove = setInterval(function() {
+						rm(speed);
+					}, 10);
+				}
+			}
+
+			function rm(speed) {
+				if (move(style.left) > 0 && move(style.left) < screenwidth - move(fatgirl.style.width) - 5) {
+					style.left = (move(style.left) + speed) + 'px';
+				} else {
+					style.width = move(style.width) - 1 + 'px';
+					document.getElementById('fattgirlwidth').innerHTML = '宽度：' + style.width;
+					$('#paly').click();
+					clearInterval(rightmove);
+					leftmove = setInterval(function() {
+						lm(speed);
+					}, 10);
+				}
+			}
+		}
+		var count = 0;
+		$(function() {
+			$('#paly').click(function() {
+				count++;
+				if (count == 20) {
+					$('audio').remove();
+					count = 0;
+				}
+				//$('body').append('<embed src="sound/pz.wav" autostart="true"  loop="false">');
+				$('body').append('<audio src="sound/pz.wav" autoplay="autoplay"> < /audio>');
+			});
+		});
+	</script>
+
+</html>
